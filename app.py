@@ -1,10 +1,39 @@
-
 import streamlit as st
-import pickle
 import pandas as pd
+from xgboost import XGBRegressor
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
 
-pipe = pickle.load(open("pipe.pkl", "rb"))
-df = pickle.load(open("df.pkl", "rb"))
+df = pd.read_csv("laptop_data.csv")
+
+X = df.drop(columns=["Price"])
+y = df["Price"]
+
+cat_cols = ["Company", "TypeName", "Cpu brand", "Gpu brand", "os"]
+
+step1 = ColumnTransformer(
+    transformers=[
+        ("onehot", OneHotEncoder(drop="first", handle_unknown="ignore"), cat_cols)
+    ],
+    remainder="passthrough"
+)
+
+step2 = XGBRegressor(
+    n_estimators=300,
+    learning_rate=0.05,
+    max_depth=6,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    random_state=3
+)
+
+pipe = Pipeline([
+    ("step1", step1),
+    ("step2", step2)
+])
+
+pipe.fit(X, y)
 
 st.title("Laptop Price Predictor")
 
