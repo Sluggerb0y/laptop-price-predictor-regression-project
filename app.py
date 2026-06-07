@@ -5,35 +5,39 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 
-df = pd.read_csv("laptop_data.csv")
+@st.cache_resource
+def train_model():
+    df = pd.read_csv("laptop_data.csv")
 
-X = df.drop(columns=["Price"])
-y = df["Price"]
+    X = df.drop(columns=["Price"])
+    y = df["Price"]
 
-cat_cols = ["Company", "TypeName", "Cpu brand", "Gpu brand", "os"]
+    cat_cols = ["Company", "TypeName", "Cpu brand", "Gpu brand", "os"]
 
-step1 = ColumnTransformer(
-    transformers=[
-        ("onehot", OneHotEncoder(drop="first", handle_unknown="ignore"), cat_cols)
-    ],
-    remainder="passthrough"
-)
+    step1 = ColumnTransformer(
+        transformers=[
+            ("onehot", OneHotEncoder(drop="first", handle_unknown="ignore"), cat_cols)
+        ],
+        remainder="passthrough"
+    )
 
-step2 = XGBRegressor(
-    n_estimators=300,
-    learning_rate=0.05,
-    max_depth=6,
-    subsample=0.8,
-    colsample_bytree=0.8,
-    random_state=3
-)
+    step2 = XGBRegressor(
+        n_estimators=50,
+        learning_rate=0.1,
+        max_depth=4,
+        random_state=3,
+        n_jobs=1
+    )
 
-pipe = Pipeline([
-    ("step1", step1),
-    ("step2", step2)
-])
+    pipe = Pipeline([
+        ("step1", step1),
+        ("step2", step2)
+    ])
 
-pipe.fit(X, y)
+    pipe.fit(X, y)
+    return pipe, df
+
+pipe, df = train_model()
 
 st.title("Laptop Price Predictor")
 
